@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>TaskFlow Manager | Yonatan Sinaga</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Drag & Drop Library -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+  <style>
+    * { font-family: 'Inter', sans-serif; }
+    .task-card {
+      background: white;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: all 0.2s ease;
+      cursor: grab;
+    }
+    .task-card:active { cursor: grabbing; }
+    .task-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .column {
+      background: #f8fafc;
+      border-radius: 16px;
+      min-height: 500px;
+      transition: background 0.2s;
+    }
+    .column.drag-over { background: #e2e8f0; }
+    .priority-high { border-left: 4px solid #ef4444; }
+    .priority-medium { border-left: 4px solid #f59e0b; }
+    .priority-low { border-left: 4px solid #10b981; }
+    .modal { transition: all 0.3s ease; }
+  </style>
+</head>
+<body class="bg-gray-100">
+
+<div class="max-w-7xl mx-auto px-4 py-8">
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-8 flex-wrap gap-4">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-2">
+        <i class="fas fa-tasks text-blue-600"></i>
+        TaskFlow Manager
+      </h1>
+      <p class="text-gray-500 text-sm mt-1">Drag & drop tasks to organize your workflow</p>
+    </div>
+    <div class="flex gap-3">
+      <div id="userDisplay" class="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm">
+        <i class="fas fa-user-circle text-blue-600 text-xl"></i>
+        <span id="userName" class="font-medium text-gray-700">Guest</span>
+        <button onclick="logout()" class="text-red-500 hover:text-red-700 text-sm ml-2"><i class="fas fa-sign-out-alt"></i></button>
+      </div>
+      <button onclick="openAddModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-full text-sm font-medium transition flex items-center gap-2">
+        <i class="fas fa-plus"></i> New Task
+      </button>
+    </div>
+  </div>
+
+  <!-- Login Modal (untuk mock auth) -->
+  <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-8 w-full max-w-md mx-4">
+      <div class="text-center mb-6">
+        <i class="fas fa-tasks text-5xl text-blue-600 mb-3"></i>
+        <h2 class="text-2xl font-bold text-gray-800">Welcome to TaskFlow</h2>
+        <p class="text-gray-500 text-sm mt-2">Enter your name to get started</p>
+      </div>
+      <input type="text" id="loginName" placeholder="Your name" class="w-full border border-gray-300 rounded-lg px-4 py-3 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-600">
+      <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition">Start Managing Tasks</button>
+      <p class="text-xs text-gray-400 text-center mt-4">Demo version - tasks saved in your browser</p>
+    </div>
+  </div>
+
+  <!-- Kanban Board -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Todo Column -->
+    <div>
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-bold text-lg text-gray-700"><i class="fas fa-circle text-gray-400 text-xs mr-2"></i>To Do</h2>
+        <span id="todoCount" class="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">0</span>
+      </div>
+      <div id="todoColumn" class="column p-4" data-status="todo"></div>
+    </div>
+
+    <!-- In Progress Column -->
+    <div>
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-bold text-lg text-blue-600"><i class="fas fa-spinner fa-spin mr-2"></i>In Progress</h2>
+        <span id="progressCount" class="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">0</span>
+      </div>
+      <div id="progressColumn" class="column p-4" data-status="progress"></div>
+    </div>
+
+    <!-- Done Column -->
+    <div>
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-bold text-lg text-green-600"><i class="fas fa-check-circle mr-2"></i>Done</h2>
+        <span id="doneCount" class="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">0</span>
+      </div>
+      <div id="doneColumn" class="column p-4" data-status="done"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Add/Edit Task -->
+<div id="taskModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 modal">
+  <div class="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
+    <h3 class="text-xl font-bold mb-4" id="modalTitle">Add New Task</h3>
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Task Title</label>
+        <input type="text" id="taskTitle" placeholder="What needs to be done?" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+        <textarea id="taskDesc" rows="2" placeholder="Add details..." class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600"></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+        <select id="taskPriority" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600">
+          <option value="low">Low 🟢</option>
+          <option value="medium">Medium 🟡</option>
+          <option value="high">High 🔴</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+        <input type="date" id="taskDueDate" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-600">
+      </div>
+    </div>
+    <div class="flex gap-3 mt-6">
+      <button onclick="saveTask()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition">Save Task</button>
+      <button onclick="closeTaskModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-lg transition">Cancel</button>
+    </div>
+    <input type="hidden" id="editTaskId" value="">
+  </div>
+</div>
+
+<script>
+  // Data
+  let tasks = [];
+  let currentUser = null;
+  let editId = null;
+  let sortableInstances = [];
+
+  // Status mapping
+  const statusMap = { todo: 'todo', progress: 'progress', done: 'done' };
+  const statusLabels = { todo: 'To Do', progress: 'In Progress', done: 'Done' };
+
+  // Initialize
+  function init() {
+    loadUser();
+    loadTasks();
+    if (!currentUser) {
+      document.getElementById('loginModal').classList.remove('hidden');
+    } else {
+      document.getElementById('loginModal').classList.add('hidden');
+      renderBoard();
+      initDragDrop();
+    }
+  }
+
+  function loadUser() {
+    const saved = localStorage.getItem('taskflow_user');
+    if (saved) {
+      currentUser = JSON.parse(saved);
+      document.getElementById('userName').innerText = currentUser.name;
+    }
+  }
+
+  function loadTasks() {
+    const saved = localStorage.getItem('taskflow_tasks');
+    if (saved) {
+      tasks = JSON.parse(saved);
+    } else {
+      // Sample tasks
+      tasks = [
+        { id: Date.now(), title: 'Design UI mockup', description: 'Create wireframes for dashboard', status: 'todo', priority: 'high', dueDate: new Date().toISOString().split('T')[0], createdAt: new Date().toISOString() },
+        { id: Date.now() + 1, title: 'Implement drag & drop', description: 'Add SortableJS integration', status: 'progress', priority: 'medium', dueDate: new Date().toISOString().split('T')[0], createdAt: new Date().toISOString() },
+        { id: Date.now() + 2, title: 'Write documentation', description: 'Update README file', status: 'done', priority: 'low', dueDate: new Date().toISOString().split('T')[0], createdAt: new Date().toISOString() }
+      ];
+    }
+  }
+
+  function saveTasks() {
+    localStorage.setItem('taskflow_tasks', JSON.stringify(tasks));
+    renderBoard();
+    updateCounts();
+  }
+
+  function login() {
+    const name = document.getElementById('loginName').value.trim();
+    if (!name) {
+      alert('Please enter your name');
+      return;
+    }
+    currentUser = { name: name, id: Date.now() };
+    localStorage.setItem('taskflow_user', JSON.stringify(currentUser));
+    document.getElementById('userName').innerText = name;
+    document.getElementById('loginModal').classList.add('hidden');
+    renderBoard();
+    initDragDrop();
+  }
+
+  function logout() {
+    localStorage.removeItem('taskflow_user');
+    currentUser = null;
+    document.getElementById('loginModal').classList.remove('hidden');
+    tasks = [];
+    renderBoard();
+  }
+
+  function renderBoard() {
+    const todoColumn = document.getElementById('todoColumn');
+    const progressColumn = document.getElementById('progressColumn');
+    const doneColumn = document.getElementById('doneColumn');
+    
+    todoColumn.innerHTML = '';
+    progressColumn.innerHTML = '';
+    doneColumn.innerHTML = '';
+    
+    tasks.forEach(task => {
+      const taskEl = createTaskElement(task);
+      if (task.status === 'todo') todoColumn.appendChild(taskEl);
+      else if (task.status === 'progress') progressColumn.appendChild(taskEl);
+      else if (task.status === 'done') doneColumn.appendChild(taskEl);
+    });
+    
+    updateCounts();
+  }
+
+  function createTaskElement(task) {
+    const div = document.createElement('div');
+    div.className = `task-card priority-${task.priority}`;
+    div.setAttribute('data-id', task.id);
+    
+    const priorityIcon = { high: '🔴', medium: '🟡', low: '🟢' };
+    const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleDateString('id-ID') : 'No date';
+    const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'done';
+    
+    div.innerHTML = `
+      <div class="flex justify-between items-start mb-2">
+        <h3 class="font-semibold text-gray-800 text-sm">${escapeHtml(task.title)}</h3>
+        <div class="flex gap-1">
+          <button onclick="editTask('${task.id}')" class="text-gray-400 hover:text-blue-600 text-xs"><i class="fas fa-edit"></i></button>
+          <button onclick="deleteTask('${task.id}')" class="text-gray-400 hover:text-red-600 text-xs"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+      <p class="text-gray-500 text-xs mb-2">${escapeHtml(task.description) || 'No description'}</p>
+      <div class="flex justify-between items-center text-xs">
+        <span class="text-gray-400"><i class="far fa-calendar-alt mr-1"></i>${dueDate}</span>
+        <span class="${isOverdue ? 'text-red-500 font-medium' : 'text-gray-400'}">${priorityIcon[task.priority]} ${task.priority.toUpperCase()}</span>
+      </div>
+    `;
+    return div;
+  }
+
+  function initDragDrop() {
+    // Destroy existing instances
+    sortableInstances.forEach(instance => instance.destroy());
+    sortableInstances = [];
+    
+    const todoColumn = document.getElementById('todoColumn');
+    const progressColumn = document.getElementById('progressColumn');
+    const doneColumn = document.getElementById('doneColumn');
+    
+    const groups = {
+      todo: Sortable.create(todoColumn, {
+        group: { name: 'tasks', pull: true, revertClone: false },
+        animation: 200,
+        onEnd: (evt) => {
+          const taskId = parseInt(evt.item.getAttribute('data-id'));
+          const newStatus = evt.to.id === 'todoColumn' ? 'todo' : evt.to.id === 'progressColumn' ? 'progress' : 'done';
+          const task = tasks.find(t => t.id === taskId);
+          if (task && task.status !== newStatus) {
+            task.status = newStatus;
+            saveTasks();
+          }
+        }
+      }),
+      progress: Sortable.create(progressColumn, {
+        group: { name: 'tasks', pull: true, revertClone: false },
+        animation: 200,
+        onEnd: (evt) => {
+          const taskId = parseInt(evt.item.getAttribute('data-id'));
+          const newStatus = evt.to.id === 'todoColumn' ? 'todo' : evt.to.id === 'progressColumn' ? 'progress' : 'done';
+          const task = tasks.find(t => t.id === taskId);
+          if (task && task.status !== newStatus) {
+            task.status = newStatus;
+            saveTasks();
+          }
+        }
+      }),
+      done: Sortable.create(doneColumn, {
+        group: { name: 'tasks', pull: true, revertClone: false },
+        animation: 200,
+        onEnd: (evt) => {
+          const taskId = parseInt(evt.item.getAttribute('data-id'));
+          const newStatus = evt.to.id === 'todoColumn' ? 'todo' : evt.to.id === 'progressColumn' ? 'progress' : 'done';
+          const task = tasks.find(t => t.id === taskId);
+          if (task && task.status !== newStatus) {
+            task.status = newStatus;
+            saveTasks();
+          }
+        }
+      })
+    };
+    
+    sortableInstances = [groups.todo, groups.progress, groups.done];
+  }
+
+  function updateCounts() {
+    document.getElementById('todoCount').innerText = tasks.filter(t => t.status === 'todo').length;
+    document.getElementById('progressCount').innerText = tasks.filter(t => t.status === 'progress').length;
+    document.getElementById('doneCount').innerText = tasks.filter(t => t.status === 'done').length;
+  }
+
+  function openAddModal() {
+    if (!currentUser) return;
+    editId = null;
+    document.getElementById('modalTitle').innerText = 'Add New Task';
+    document.getElementById('taskTitle').value = '';
+    document.getElementById('taskDesc').value = '';
+    document.getElementById('taskPriority').value = 'medium';
+    document.getElementById('taskDueDate').value = '';
+    document.getElementById('editTaskId').value = '';
+    document.getElementById('taskModal').classList.remove('hidden');
+    document.getElementById('taskModal').classList.add('flex');
+  }
+
+  function editTask(id) {
+    const task = tasks.find(t => t.id == id);
+    if (!task) return;
+    editId = id;
+    document.getElementById('modalTitle').innerText = 'Edit Task';
+    document.getElementById('taskTitle').value = task.title;
+    document.getElementById('taskDesc').value = task.description || '';
+    document.getElementById('taskPriority').value = task.priority;
+    document.getElementById('taskDueDate').value = task.dueDate || '';
+    document.getElementById('editTaskId').value = id;
+    document.getElementById('taskModal').classList.remove('hidden');
+    document.getElementById('taskModal').classList.add('flex');
+  }
+
+  function saveTask() {
+    const title = document.getElementById('taskTitle').value.trim();
+    if (!title) {
+      alert('Please enter task title');
+      return;
+    }
+    
+    const taskData = {
+      title: title,
+      description: document.getElementById('taskDesc').value,
+      priority: document.getElementById('taskPriority').value,
+      dueDate: document.getElementById('taskDueDate').value
+    };
+    
+    if (editId) {
+      const index = tasks.findIndex(t => t.id == editId);
+      if (index !== -1) {
+        tasks[index] = { ...tasks[index], ...taskData };
+      }
+    } else {
+      tasks.push({
+        id: Date.now(),
+        ...taskData,
+        status: 'todo',
+        createdAt: new Date().toISOString()
+      });
+    }
+    
+    saveTasks();
+    closeTaskModal();
+  }
+
+  function deleteTask(id) {
+    if (confirm('Delete this task?')) {
+      tasks = tasks.filter(t => t.id != id);
+      saveTasks();
+    }
+  }
+
+  function closeTaskModal() {
+    document.getElementById('taskModal').classList.add('hidden');
+    document.getElementById('taskModal').classList.remove('flex');
+  }
+
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+      if (m === '&') return '&amp;';
+      if (m === '<') return '&lt;';
+      if (m === '>') return '&gt;';
+      return m;
+    });
+  }
+
+  // Start app
+  init();
+</script>
+</body>
+</html>
