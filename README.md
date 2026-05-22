@@ -1,4 +1,4 @@
-# ✅ TaskFlow Manager
+# TaskFlow Manager
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
@@ -10,22 +10,22 @@
 
 ---
 
-## 📋 Features
+## Features
 
 | Feature | Description |
 |---------|-------------|
-| 🎯 **Drag & Drop** | Move tasks between columns with smooth drag-and-drop |
-| 📋 **Kanban Board** | Three columns: To Do, In Progress, Done |
-| 🏷️ **Priority Levels** | High 🔴, Medium 🟡, Low 🟢 priorities |
-| 📅 **Due Dates** | Set deadlines and track overdue tasks |
-| 📝 **Task Descriptions** | Add detailed notes to each task |
-| 👤 **User Profile** | Personalized experience with name login |
-| 💾 **Local Storage** | All data saved automatically in your browser |
-| 📱 **Responsive** | Works perfectly on mobile, tablet, and desktop |
+|  **Drag & Drop** | Move tasks between columns with smooth drag-and-drop |
+|  **Kanban Board** | Three columns: To Do, In Progress, Done |
+|  **Priority Levels** | High 🔴, Medium 🟡, Low 🟢 priorities |
+|  **Due Dates** | Set deadlines and track overdue tasks |
+|  **Task Descriptions** | Add detailed notes to each task |
+|  **User Profile** | Personalized experience with name login |
+|  **Local Storage** | All data saved automatically in your browser |
+|  **Responsive** | Works perfectly on mobile, tablet, and desktop |
 
 ---
 
-## 🛠️ Technologies Used
+## Technologies Used
 
 | Technology | Purpose |
 |------------|---------|
@@ -38,7 +38,7 @@
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 - Any modern web browser (Chrome, Firefox, Safari, Edge)
@@ -61,7 +61,7 @@
 python -m http.server 8000
 
 # Using VS Code Live Server extension
-📖 How to Use
+How to Use
 Getting Started
 Enter your name to create a profile
 
@@ -77,7 +77,7 @@ Click "Save Task"
 Managing Tasks
 Drag & Drop any task to move between columns
 
-Edit task by clicking the edit icon ✏️
+Edit task by clicking the edit icon 
 
 Delete task by clicking the trash icon 🗑️
 
@@ -88,13 +88,13 @@ Column	Status	Description
 To Do	Pending	Tasks waiting to be started
 In Progress	Active	Tasks currently being worked on
 Done	Completed	Finished tasks
-📁 Project Structure
+Project Structure
 text
 taskflow-manager/
 ├── index.html          # Main application file
 ├── README.md           # Documentation
 └── .gitignore          # Git ignore file
-🎨 Screenshots
+Screenshots
 Kanban Board
 https://via.placeholder.com/800x400?text=TaskFlow+Kanban+Board
 
@@ -121,7 +121,7 @@ Email reminders for due dates
 
 Team collaboration features
 
-🤝 Contributing
+Contributing
 Contributions are welcome! If you'd like to improve this project:
 
 Fork the repository
@@ -134,15 +134,15 @@ Push to the branch (git push origin feature/AmazingFeature)
 
 Open a Pull Request
 
-📄 License
+License
 This project is licensed under the MIT License — see the LICENSE file for details.
 
-👨‍💻 Author
+Author
 Yonatan Sinaga
 
 GitHub: @HashPieris
 
-Portfolio: your-portfolio-domain.com
+Portfolio: yonatansinaga-portofolio.wuaze.com
 
 LinkedIn: linkedin.com/in/yonatansinaga
 
